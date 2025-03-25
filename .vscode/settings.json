@@ -1,0 +1,10 @@
+{
+    "Lua.diagnostics.globals": [
+        "love",
+        "contains",
+        "vector"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
+    ]
+}
