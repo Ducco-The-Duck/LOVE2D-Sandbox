@@ -1,6 +1,9 @@
-collisions = {}
 
-collisions.collisionCheckFunctions = {
+------------------------------------------------------------
+-- Collision Checking functions for the 2 basic colliders --
+------------------------------------------------------------
+
+local CollisionCheckFunctions = {
     rectrect = function (hb1, hb2)
         local toright = hb1.x2 < hb2.x1
         local toleft = hb1.x1 > hb2.x2
@@ -37,33 +40,80 @@ collisions.collisionCheckFunctions = {
     end
 }
 
-function collisions.createRectHB(x1, y1, w, h)
-    local hb = {}
-    hb.type = 'rect'
-    hb.x1 = math.min(x1, x1+w)
-    hb.y1 = math.min(y1, y1+h)
-    hb.x2 = math.max(x1, x1+w)
-    hb.y2 = math.max(y1, y1+h)
-    return hb
+-------------------------
+-- Two basic colliders --
+-------------------------
 
+RectCollider = {}
+RectCollider.__index = RectCollider
+
+function RectCollider:new(x1, y1, w, h)
+    self = setmetatable({}, RectCollider)
+    self.type = 'rect'
+    self.x1 = x1
+    self.y1 = y1
+    self.x2 = x1+w
+    self.y2 = y1+h
+    return self
 end
 
-function collisions.createCircHB(x, y, r)
-    local hb = {}
-    hb.type = 'circ'
-    hb.x = x
-    hb.y = y
-    hb.r = r
-    return hb
+CircCollider = {}
+CircCollider.__index = CircCollider
 
+function CircCollider:new(x, y, r)
+    self = setmetatable({}, CircCollider)
+    self.type = 'circ'
+    self.x = x
+    self.y = y
+    self.r = r
+    return self
 end
 
-function collisions.checkCollision(hb1, hb2)
-    local coll = false
-    for _, h1 in ipairs(hb1) do
-        for _, h2 in ipairs(hb2) do
-            coll = coll or collisions.collisionCheckFunctions[h1.type .. h2.type](h1, h2)
+------------------------------
+-- General Collider for use --
+------------------------------
+
+Collider = {}
+Collider.__index = Collider
+
+function Collider:new(tableOfColliders)
+    self = setmetatable({}, Collider)
+    self.colliders = tableOfColliders
+    self.ABABCollider = nil
+    self:calculateABABCollider()
+end
+
+function Collider:calculateABABCollider()
+    local left, right, up, down = math.huge, 0, math.huge, 0
+
+    for _, collider in ipairs(self.colliders) do
+
+        if collider.type == 'rect' then
+            left = math.min(left, collider.x1)
+            right = math.max(right, collider.x2)
+            up = math.min(up, collider.y1)
+            down = math.max(down, collider.y2)
+
+        elseif collider.type == 'circ' then
+            left = math.min(left, collider.x - collider.r)
+            right = math.max(right, collider.x + collider.r)
+            up = math.min(up, collider.y - collider.r)
+            down = math.max(down, collider.y + collider.r)
         end
     end
+
+    self.ABABCollider = RectCollider(left, up, right - left, down - up)
+end
+
+function Collider:checkCollision(hb)
+    local coll = false
+    if CollisionCheckFunctions['rectrect'](self.ABABCollider, hb.ABABCollider) then
+        for _, h1 in ipairs(self) do
+            for _, h2 in ipairs(hb) do
+                coll = coll or CollisionCheckFunctions[h1.type .. h2.type](h1, h2)
+            end
+        end
+    end
+
     return coll
 end
