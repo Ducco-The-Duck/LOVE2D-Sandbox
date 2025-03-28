@@ -48,7 +48,18 @@ CollisionManager = {}
 CollisionManager.__index = CollisionManager
 
 function CollisionManager:new()
-    
+    self = setmetatable({}, CollisionManager)
+    self.quadtree = QuadtreeNode(0, 0, love.graphics.getPixelWidth(), love.graphics.getPixelHeight(), 10, self)
+    self.collisions = {}
+end
+
+function CollisionManager:checkCollision()
+    self.collisions = {}
+    self.quadtree.checkCollision()
+    for _, value in pairs(self.collisions) do
+        -- handle collisions
+        print(value[1].id, value[2].id)
+    end
 end
 
 -------------------------
@@ -127,4 +138,82 @@ function Collider:checkCollision(hb)
     end
 
     return coll
+end
+
+--------------
+-- Quadtree --
+--------------
+
+QuadtreeNode = {}
+QuadtreeNode.__index = QuadtreeNode
+
+function QuadtreeNode:new(x, y, w, h, cap, collmanager)
+    self = setmetatable({}, QuadtreeNode)
+    self.x1, self.y1, self.w, self.h = x, y, w, h
+    self.collider = Collider({RectCollider(x, y, w, h)})
+    self.collisionManager = collmanager
+    self.cap = cap
+    self.objects = {}
+    self.leaf = true
+    self.children = {}
+end
+
+function QuadtreeNode:insert(obj)
+    if self.collider:checkCollision(obj) then
+        self.objects[obj.id] = obj
+        if #self.objects > self.cap then
+            self:divide()
+        end
+        if not self.leaf then for _, child in ipairs(self.children) do child:insert(obj) end end
+    end
+end
+
+function QuadtreeNode:delete(obj)
+    self.objects[obj.id] = nil
+    if #self.objects <= self.cap then
+        self:rejoin()
+    end
+    if not self.leaf then for _, child in ipairs(self.children) do child:delete(obj) end end
+end
+
+function QuadtreeNode:rejoin()
+    if not self.leaf then
+        self.children = {}
+        self.leaf = true
+    end
+end
+
+function QuadtreeNode:divide()
+    if self.leaf then
+        local q1, q2, q3, q4 =
+            QuadtreeNode:new(self.x           , self.y           , self.w/2, self.h/2, self.cap),
+            QuadtreeNode:new(self.x + self.w/2, self.y           , self.w/2, self.h/2, self.cap),
+            QuadtreeNode:new(self.x           , self.y + self.h/2, self.w/2, self.h/2, self.cap),
+            QuadtreeNode:new(self.x + self.w/2, self.y + self.h/2, self.w/2, self.h/2, self.cap)
+        self.leaf = false
+        self.children = {q1, q2, q3, q4}
+        for _, child in ipairs(self.children) do
+            for _, obj in ipairs(self.objects) do
+                child:insert(obj)
+            end
+        end
+    end
+end
+
+function QuadtreeNode:checkCollision()
+    if self.leaf then
+        for _, obj1 in ipairs(self.objects) do
+            for _, obj2 in ipairs(self.objects) do
+                if obj1 ~= obj2 and
+                    (self.collisionManager.collisions[obj1.id .. obj2.id] or self.collisionManager.collisions[obj2.id .. obj1.id]) and
+                    obj1.collider.checkCollision(obj2.collider) then
+                    self.collisionManager.collisions[obj1.id .. obj2.id] = {obj1, obj2}
+                end
+            end
+        end
+    else
+        for _, child in ipairs(self.children) do
+            child:checkCollision()
+        end
+    end
 end

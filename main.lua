@@ -30,6 +30,12 @@ local function uuid()
     end)
 end
 
+local t = {1, 2}
+local p = {}
+p[{1, 2}] = 'ppp'
+
+if nil or {} then print('o') end
+
 print(_VERSION)
 print(os.time())
 print(uuid())
