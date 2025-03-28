@@ -40,6 +40,17 @@ local CollisionCheckFunctions = {
     end
 }
 
+-----------------------
+-- Collision Manager --
+-----------------------
+
+CollisionManager = {}
+CollisionManager.__index = CollisionManager
+
+function CollisionManager:new()
+    
+end
+
 -------------------------
 -- Two basic colliders --
 -------------------------
