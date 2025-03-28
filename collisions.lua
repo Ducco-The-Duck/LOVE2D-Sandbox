@@ -186,10 +186,10 @@ end
 function QuadtreeNode:divide()
     if self.leaf then
         local q1, q2, q3, q4 =
-            QuadtreeNode:new(self.x           , self.y           , self.w/2, self.h/2, self.cap),
-            QuadtreeNode:new(self.x + self.w/2, self.y           , self.w/2, self.h/2, self.cap),
-            QuadtreeNode:new(self.x           , self.y + self.h/2, self.w/2, self.h/2, self.cap),
-            QuadtreeNode:new(self.x + self.w/2, self.y + self.h/2, self.w/2, self.h/2, self.cap)
+            QuadtreeNode:new(self.x           , self.y           , self.w/2, self.h/2, self.cap, self.collisionManager),
+            QuadtreeNode:new(self.x + self.w/2, self.y           , self.w/2, self.h/2, self.cap, self.collisionManager),
+            QuadtreeNode:new(self.x           , self.y + self.h/2, self.w/2, self.h/2, self.cap, self.collisionManager),
+            QuadtreeNode:new(self.x + self.w/2, self.y + self.h/2, self.w/2, self.h/2, self.cap, self.collisionManager)
         self.leaf = false
         self.children = {q1, q2, q3, q4}
         for _, child in ipairs(self.children) do

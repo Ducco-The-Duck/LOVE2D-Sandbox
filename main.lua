@@ -32,9 +32,14 @@ end
 
 local t = {1, 2}
 local p = {}
-p[{1, 2}] = 'ppp'
+local s = p
 
-if nil or {} then print('o') end
+print(#s, #p)
+
+p['we'] = 2
+
+print(#s, #p)
+print(s.we, p.we)
 
 print(_VERSION)
 print(os.time())
